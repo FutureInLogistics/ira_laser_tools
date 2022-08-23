@@ -93,8 +93,10 @@ LaserscanMerger::LaserscanMerger() : Node("laserscan_multi_merger")
 
 	this->laserscan_topic_parser();
 
-	point_cloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(cloud_destination_topic.c_str(), rclcpp::SensorDataQoS());
-	laser_scan_publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>(scan_destination_topic.c_str(), rclcpp::SensorDataQoS());
+	point_cloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(cloud_destination_topic.c_str(), rclcpp::SensorDataQoS().reliable());
+
+	// NOTE(sam): The topic does not seem to be displayed in rviz2 with BEST_EFFORT qos settings
+	laser_scan_publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>(scan_destination_topic.c_str(), rclcpp::SensorDataQoS().reliable());
 }
 
 rcl_interfaces::msg::SetParametersResult LaserscanMerger::reconfigureCallback(const std::vector<rclcpp::Parameter> &parameters)
@@ -216,7 +218,7 @@ void LaserscanMerger::scanCallback(sensor_msgs::msg::LaserScan::SharedPtr scan, 
 	{
 		// Verify that TF knows how to transform from the received scan to the destination scan frame
 		tf_buffer_->lookupTransform(scan->header.frame_id.c_str(), destination_frame.c_str(), scan->header.stamp, rclcpp::Duration(1, 0));
-		projector_.transformLaserScanToPointCloud(scan->header.frame_id, *scan, tmpCloud1, *tf_buffer_, laser_geometry::channel_option::Distance);
+		projector_.transformLaserScanToPointCloud(scan->header.frame_id, *scan, tmpCloud1, *tf_buffer_, range_max, laser_geometry::channel_option::Distance);
 		pcl_ros::transformPointCloud(destination_frame.c_str(), tmpCloud1, tmpCloud2, *tf_buffer_);
 	}
 	catch (tf2::TransformException &ex)
@@ -290,6 +292,7 @@ void LaserscanMerger::pointcloud_to_laserscan(Eigen::MatrixXf points, pcl::PCLPo
 
 	uint32_t ranges_size = std::ceil((output.angle_max - output.angle_min) / output.angle_increment);
 	output.ranges.assign(ranges_size, std::numeric_limits<double>::infinity());
+	output.intensities.assign(ranges_size, 0.0);
 
 	for (int i = 0; i < points.cols(); i++)
 	{
