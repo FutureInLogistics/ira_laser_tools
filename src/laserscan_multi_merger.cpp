@@ -274,6 +274,7 @@ void LaserscanMerger::scanCallback(sensor_msgs::msg::LaserScan::SharedPtr scan, 
 
 		pcl_conversions::moveFromPCL(merged_cloud, *cloud_msg);
 
+		cloud_msg->header.stamp = this->get_clock()->now();
 		point_cloud_publisher_->publish(*cloud_msg);
 	}
 }
@@ -282,6 +283,7 @@ void LaserscanMerger::pointcloud_to_laserscan(Eigen::MatrixXf points, pcl::PCLPo
 {
 	sensor_msgs::msg::LaserScan output;
 	output.header = pcl_conversions::fromPCL(merged_cloud->header);
+	output.header.stamp = this->get_clock()->now();
 	output.angle_min = this->angle_min;
 	output.angle_max = this->angle_max;
 	output.angle_increment = this->angle_increment;
