@@ -4,7 +4,7 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <laser_geometry/laser_geometry.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -20,7 +20,7 @@ typedef pcl::PointCloud<pcl::PointXYZ> myPointCloud;
 using namespace std;
 using namespace pcl;
 
-using std::placeholders::_1;
+// using std::placeholders::_1;
 
 class LaserscanVirtualizer : public rclcpp::Node
 {
@@ -192,7 +192,7 @@ LaserscanVirtualizer::LaserscanVirtualizer() : Node("laserscan_virtualizer")
 	this->get_parameter("range_max", range_max);
 
 	param_callback_handle_ = this->add_on_set_parameters_callback(
-			std::bind(&LaserscanVirtualizer::reconfigureCallback, this, _1));
+			std::bind(&LaserscanVirtualizer::reconfigureCallback, this, std::placeholders::_1));
 
 	tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
 	tfListener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -200,7 +200,7 @@ LaserscanVirtualizer::LaserscanVirtualizer() : Node("laserscan_virtualizer")
 	this->virtual_laser_scan_parser();
 
 	point_cloud_subscription_ =
-			this->create_subscription<sensor_msgs::msg::PointCloud2>(cloud_topic.c_str(), rclcpp::SensorDataQoS(), std::bind(&LaserscanVirtualizer::pointCloudCallback, this, _1));
+			this->create_subscription<sensor_msgs::msg::PointCloud2>(cloud_topic.c_str(), rclcpp::SensorDataQoS(), std::bind(&LaserscanVirtualizer::pointCloudCallback, this, std::placeholders::_1));
 	cloud_frame = "";
 }
 

@@ -20,7 +20,7 @@
 using namespace std;
 using namespace pcl;
 
-using std::placeholders::_1;
+// using std::placeholders::_1;
 
 class LaserscanMerger : public rclcpp::Node
 {
@@ -59,6 +59,8 @@ private:
 	string cloud_destination_topic;
 	string scan_destination_topic;
 	string laserscan_topics;
+
+  rclcpp::Time _last_scan;
 };
 
 LaserscanMerger::LaserscanMerger() : Node("laserscan_multi_merger")
@@ -86,7 +88,7 @@ LaserscanMerger::LaserscanMerger() : Node("laserscan_multi_merger")
 	this->get_parameter("range_max", range_max);
 
 	param_callback_handle_ = this->add_on_set_parameters_callback(
-			std::bind(&LaserscanMerger::reconfigureCallback, this, _1));
+			std::bind(&LaserscanMerger::reconfigureCallback, this, std::placeholders::_1));
 
 	tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
 	tfListener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
