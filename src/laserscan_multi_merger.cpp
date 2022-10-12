@@ -17,7 +17,7 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 
-using namespace std;
+// using namespace std;
 using namespace pcl;
 
 // using std::placeholders::_1;
@@ -43,7 +43,7 @@ private:
 	std::vector<bool> clouds_modified;
 
 	std::vector<pcl::PCLPointCloud2> clouds;
-	std::vector<string> input_topics;
+	std::vector<std::string> input_topics;
 
 	void laserscan_topic_parser();
 
@@ -55,10 +55,10 @@ private:
 	double range_min;
 	double range_max;
 
-	string destination_frame;
-	string cloud_destination_topic;
-	string scan_destination_topic;
-	string laserscan_topics;
+	std::string destination_frame;
+	std::string cloud_destination_topic;
+	std::string scan_destination_topic;
+	std::string laserscan_topics;
 
   rclcpp::Time _last_scan;
 };
@@ -155,10 +155,10 @@ void LaserscanMerger::laserscan_topic_parser()
 	// LaserScan topics to subscribe
 	std::map<std::string, std::vector<std::string>> topics;
 
-	istringstream iss(laserscan_topics);
-	set<string> tokens;
-	copy(istream_iterator<string>(iss), istream_iterator<string>(), inserter<set<string>>(tokens, tokens.begin()));
-	std::vector<string> tmp_input_topics;
+	std::istringstream iss(laserscan_topics);
+	std::set<std::string> tokens;
+	std::copy(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>(), std::inserter<std::set<std::string>>(tokens, tokens.begin()));
+	std::vector<std::string> tmp_input_topics;
 
 	while (!tokens.empty())
 	{
@@ -179,7 +179,7 @@ void LaserscanMerger::laserscan_topic_parser()
 	}
 
 	sort(tmp_input_topics.begin(), tmp_input_topics.end());
-	std::vector<string>::iterator last = std::unique(tmp_input_topics.begin(), tmp_input_topics.end());
+	std::vector<std::string>::iterator last = std::unique(tmp_input_topics.begin(), tmp_input_topics.end());
 	tmp_input_topics.erase(last, tmp_input_topics.end());
 
 	// Do not re-subscribe if the topics are the same
@@ -202,7 +202,7 @@ void LaserscanMerger::laserscan_topic_parser()
 								this, std::placeholders::_1, input_topics[i]);
 				scan_subscribers[i] = this->create_subscription<sensor_msgs::msg::LaserScan>(input_topics[i].c_str(), rclcpp::SensorDataQoS(), callback);
 				clouds_modified[i] = false;
-				cout << input_topics[i] << " ";
+				std::cout << input_topics[i] << " ";
 			}
 		}
 		else
@@ -276,8 +276,11 @@ void LaserscanMerger::scanCallback(sensor_msgs::msg::LaserScan::SharedPtr scan, 
 
 		pcl_conversions::moveFromPCL(merged_cloud, *cloud_msg);
 
-		cloud_msg->header.stamp = this->get_clock()->now();
+		cloud_msg->header.stamp = scan->header.stamp;//this->get_clock()->now();
 		point_cloud_publisher_->publish(*cloud_msg);
+
+    //todo check if ok
+    _last_scan = scan->header.stamp;
 	}
 }
 
@@ -285,7 +288,7 @@ void LaserscanMerger::pointcloud_to_laserscan(Eigen::MatrixXf points, pcl::PCLPo
 {
 	sensor_msgs::msg::LaserScan output;
 	output.header = pcl_conversions::fromPCL(merged_cloud->header);
-	output.header.stamp = this->get_clock()->now();
+	output.header.stamp = _last_scan;//this->get_clock()->now();
 	output.angle_min = this->angle_min;
 	output.angle_max = this->angle_max;
 	output.angle_increment = this->angle_increment;
